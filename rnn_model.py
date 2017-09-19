@@ -22,13 +22,37 @@ def create_model():
     batchY_placeholder = tf.placeholder(tf.int32, [batch_size, truncated_backprop_length])
 
     init_state = tf.placeholder(tf.float32, [batch_size, state_size])
-    W = tf.Variable(np.random.rand(state_size + input_size, state_size))
+    U = tf.Variable(np.random.rand(input_size, state_size)) # weights for input -> state t
+    W = tf.Variable(np.random.rand(state_size, state_size)) # weights for state t-1 -> state t
     b = tf.Variable(np.zeros((1, state_size)), dtype=tf.float32)
 
-    W2 = tf.Variable(np.random.rand(state_size, input_size), dtype=tf.float32)
-    b2 = tf.Variable(np.zeros(1, input_size), dtype=tf.float32)
+
+    V = tf.Variable(np.random.rand(state_size, input_size), dtype=tf.float32)
+    b_V = tf.Variable(np.zeros(1, input_size), dtype=tf.float32)
+
+    inputs_series = tf.unpack(batchX_placeholder, axis=1)
+    outputs_series = tf.unpack(batchY_placeholder, axis=1)
+
+    # forward pass
+    current_state = init_state
+    states_series = []
+    for current_input in inputs_series:
+        current_input = tf.reshape(current_input, [batch_size, 1])
+        # input_and_state_concatenated = tf.concat(1, [current_input, current_state])  # Increasing number of columns
+
+        next_state = tf.tanh(tf.matmul(current_input, U) + tf.matmul(current_state, W)+ b) # s_t = f(U x_t + W s_t-1)
+        states_series.append(next_state)
+        current_state = next_state
 
 
+    logits_series = [tf.matmul(state, V) + b_V for state in states_series] #Broadcasted addition
+    predictions_series = [tf.nn.softmax(logits) for logits in logits_series]
+
+    losses = [tf.nn.sparse_softmax_cross_entropy_with_logits(logits, labels) for logits, labels in zip(logits_series,labels_series)]
+    total_loss = tf.reduce_mean(losses)
+
+
+train_step = tf.train.AdagradOptimizer(0.3).minimize(total_loss)
 def learn_things():
     midi_list = midi_io.get_pieces()
     for i in range(0, 20):
@@ -36,6 +60,7 @@ def learn_things():
         print(os.listdir('./data')[i])
         midi_io.print_statematrix(midi_list[i][-20:])
         print('------------------------------------')
+
 
 def get_random_sample(pieces):
     rand_piece = pieces[random.randint(0, len(pieces))]
