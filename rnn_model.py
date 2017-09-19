@@ -53,9 +53,17 @@ def get_random_sample(pieces):
     init_index -= init_index % 4
     return rand_piece[init_index:init_index+sample_length]
 
+def get_sample_output(sample):
+    # input shifted 1, plus a 0 state
+    sample_output = sample[1:]
+    sample_output.append([[0, 0] for i in range(input_size)]);
+    return sample_output;
+
 if __name__ == '__main__':
     # learn_things()
     pieces = midi_io.get_pieces()
     print("TEST " + str(len(pieces)))
-    midi_io.print_statematrix(get_random_sample(pieces))
+    rand_sample = get_random_sample(pieces)
+    midi_io.print_statematrix(rand_sample)
     print("DONE")
+    midi_io.print_statematrix(get_sample_output(rand_sample))
