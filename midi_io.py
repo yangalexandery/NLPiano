@@ -12,7 +12,7 @@ DIR_PREFIX = './data/'
 
 
 def get_pieces():
-    return [get_piece(DIR_PREFIX + midi_file) for midi_file in os.listdir(DIR_PREFIX)[0:20]]
+    return [get_piece(DIR_PREFIX + midi_file) for midi_file in os.listdir(DIR_PREFIX)[20:40]]
 
 def get_piece(midi_file):
     pattern = midi.read_midifile(midi_file)
@@ -89,6 +89,11 @@ def get_piece(midi_file):
         time += 1
 
     print(len(statematrix))
+    for i in range(len(statematrix)-1, -1, -1):
+        tot = sum([x[0] + x[1] for x in statematrix[i]]);
+        if tot > 0:
+            print(str(tot) + " " + str(i));
+            return statematrix[:i+1];
     return statematrix
 
 def print_statematrix(statematrix):
