@@ -47,7 +47,7 @@ def get_random_sample(pieces):
 def get_sample_output(sample):
     # input shifted 1, plus a 0 state
     sample_output = sample[1:]
-    np.append(sample_output, np.array([[[0, 0] for i in range(input_size)]]));
+    np.append(sample_output, np.array([[[0.0, 0.0] for i in range(input_size)]]));
     return sample_output;
 
 
@@ -55,16 +55,16 @@ batchX_placeholder = tf.placeholder(tf.float32, [batch_size, sample_length, inpu
 batchY_placeholder = tf.placeholder(tf.int32, [batch_size, sample_length, input_size, num_substates])
 
 init_state = tf.placeholder(tf.float32, [batch_size, state_size])
-U = tf.Variable(np.random.rand(num_substates*input_size, state_size)) # weights for input -> state t
-W = tf.Variable(np.random.rand(state_size, state_size)) # weights for state t-1 -> state t
+U = tf.Variable(np.random.rand(num_substates*input_size, state_size), dtype=tf.float32) # weights for input -> state t
+W = tf.Variable(np.random.rand(state_size, state_size), dtype=tf.float32) # weights for state t-1 -> state t
 b = tf.Variable(np.zeros((1, state_size)), dtype=tf.float32)
 
 
-V = tf.Variable(np.random.rand(state_size, num_substates*input_size), dtype=tf.float32)
-b_V = tf.Variable(np.zeros((1, input_size)), dtype=tf.float32)
+V = tf.Variable(np.random.rand(state_size, num_substates*input_size*2), dtype=tf.float32)
+b_V = tf.Variable(np.zeros((1, num_substates*input_size*2)), dtype=tf.float32)
 
-inputs_series = tf.unpack(batchX_placeholder, axis=1)
-outputs_series = tf.unpack(batchY_placeholder, axis=1)
+inputs_series = tf.unstack(batchX_placeholder, axis=1)
+outputs_series = tf.unstack(batchY_placeholder, axis=1)
 
 # forward pass
 current_state = init_state
@@ -82,9 +82,20 @@ for current_input in inputs_series: # there should be sample_length number of in
 
 # TODO: figure out if this stuff actually works
 logits_series = [tf.matmul(state, V) + b_V for state in states_series] #Broadcasted addition
-predictions_series = [tf.nn.softmax(logits) for logits in logits_series]
+for logit in logits_series:
+    print(logit.dtype)
+predictions_series = [tf.reshape(tf.nn.softmax(logits), [batch_size, num_substates*input_size, 2]) for logits in logits_series]
 
-losses = [tf.nn.sparse_softmax_cross_entropy_with_logits(logits, labels) for logits, labels in zip(logits_series,outputs_series)]
+losses = []
+for logits, labels in zip(logits_series, outputs_series):
+    print(logits.dtype, " ", labels.dtype)
+    losses.append(tf.nn.sparse_softmax_cross_entropy_with_logits(
+        logits=tf.reshape(logits, [batch_size, num_substates*input_size, 2]),
+        labels=tf.reshape(labels, [batch_size, num_substates*input_size])
+    ))
+# losses = [tf.nn.sparse_softmax_cross_entropy_with_logits(
+#     logits=tf.reshape(logits, [batch_size, num_substates*input_size]), 
+#     labels=tf.reshape(tf.nn.softmax(labels), [batch_size, num_substates*input_size])) for logits, labels in zip(logits_series,outputs_series)]
 total_loss = tf.reduce_mean(losses)
 # TODO: see if matrix multiplications can be optimized by using tensorflow's a_is_sparse or b_is_sparse flag.
 train_step = tf.train.AdagradOptimizer(0.3).minimize(total_loss)

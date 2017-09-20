@@ -94,7 +94,7 @@ def get_piece(midi_file):
         if tot > 0:
             print(str(tot) + " " + str(i));
             return statematrix[:i+1];
-    return np.array(statematrix)
+    return np.array(statematrix, dtype=np.float32)
 
 def print_statematrix(statematrix):
     count = 0
