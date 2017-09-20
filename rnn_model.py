@@ -6,7 +6,7 @@ import random
 
 import midi_io
 
-num_epochs = 1
+num_epochs = 10
 truncated_backprop_length = 15
 state_size = 44
 batch_size = 1
@@ -29,26 +29,26 @@ def learn_things():
 
 
 def get_random_sample(pieces):
-    rand_piece = pieces[random.randint(0, len(pieces))]
+    rand_piece = pieces[random.randint(0, len(pieces) - 1)]
 
     while len(rand_piece) == 0:
-        rand_piece = pieces[random.randint(0, len(pieces))]
+        rand_piece = pieces[random.randint(0, len(pieces) - 1)]
 
-    print("RANDOM SAMPLE LENGTH")
-    print(len(rand_piece))
+    # print("RANDOM SAMPLE LENGTH")
+    # print(len(rand_piece))
 
     if len(rand_piece) < sample_length:
         return rand_piece
 
-    init_index = random.randint(0, len(rand_piece) - sample_length + 1)
+    init_index = random.randint(0, len(rand_piece) - sample_length)
     init_index -= init_index % 4
     return rand_piece[init_index:init_index+sample_length]
 
 def get_sample_output(sample):
     # input shifted 1, plus a 0 state
     sample_output = sample[1:]
-    np.append(sample_output, np.array([[[0.0, 0.0] for i in range(input_size)]]));
-    return sample_output;
+    return np.vstack((sample_output, np.array([[[0.0, 0.0] for i in range(input_size)]])));
+    # return sample_output;
 
 
 batchX_placeholder = tf.placeholder(tf.float32, [batch_size, sample_length, input_size, num_substates])
@@ -82,13 +82,13 @@ for current_input in inputs_series: # there should be sample_length number of in
 
 # TODO: figure out if this stuff actually works
 logits_series = [tf.matmul(state, V) + b_V for state in states_series] #Broadcasted addition
-for logit in logits_series:
-    print(logit.dtype)
+# for logit in logits_series:
+#     print(logit.dtype)
 predictions_series = [tf.reshape(tf.nn.softmax(logits), [batch_size, num_substates*input_size, 2]) for logits in logits_series]
 
 losses = []
 for logits, labels in zip(logits_series, outputs_series):
-    print(logits.dtype, " ", labels.dtype)
+    # print(logits_seriess.dtype, " ", labels.dtype)
     losses.append(tf.nn.sparse_softmax_cross_entropy_with_logits(
         logits=tf.reshape(logits, [batch_size, num_substates*input_size, 2]),
         labels=tf.reshape(labels, [batch_size, num_substates*input_size])
@@ -103,7 +103,7 @@ train_step = tf.train.AdagradOptimizer(0.3).minimize(total_loss)
 def train_model():
     pieces = midi_io.get_pieces()
     with tf.Session() as sess:
-        sess.run(tf.initialize_all_variables())
+        sess.run(tf.global_variables_initializer())
         loss_list = []
 
         for epoch_idx in range(num_epochs):
@@ -111,8 +111,12 @@ def train_model():
 
             x = np.array(get_random_sample(pieces))
             y = np.array(get_sample_output(x))
-            np.expand_dims(x, axis=0)
-            np.expand_dims(y, axis=0)
+            x = np.expand_dims(x, axis=0)
+            y = np.expand_dims(y, axis=0)
+            # x = np.expand_dims(np.array(get_random_sample(pieces)), axis=0)
+            # y = np.expand_dims(np.array(get_sample_output(x)), axis=0)
+            # np.expand_dims(y, axis=0)
+            # print(x.shape)
 
             _total_loss, _train_step, _current_state, _predictions_series = sess.run(
                 [total_loss, train_step, current_state, predictions_series], 
@@ -123,6 +127,7 @@ def train_model():
                 })
 
             loss_list.append(_total_loss)
+            print("LOSS FOR EPOCH #%d (mean cross entropy): %f" % (epoch_idx, _total_loss))
 
     print("DONE")
 
