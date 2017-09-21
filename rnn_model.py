@@ -104,8 +104,8 @@ def train_model():
 
             loss_list.append(_total_loss)
             print("LOSS FOR EPOCH #%d (mean cross entropy): %f" % (epoch_idx, _total_loss))
-            # if epoch_idx % 10 == 9:
-            #     midi_io.print_statematrix(tf.argmax(_predictions_series, axis=2))
+            if epoch_idx % 10 == 9:
+                midi_io.print_predictions(_predictions_series)
 
     print("DONE")
 

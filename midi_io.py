@@ -1,6 +1,8 @@
 import midi
 import os
 
+import numpy as np
+
 LOWER_BOUND = 24
 UPPER_BOUND = 102
 
@@ -115,6 +117,23 @@ def print_statematrix(statematrix):
         count += 1
         print(s1)
         # print(s2)
+
+def print_predictions(pred_matrix):
+    for pred in pred_matrix[0]:
+        s1 = ''
+        s2 = ''
+        for x in pred:
+            a = np.argmax(x[0])
+            b = np.argmax(x[1])
+            print(a, " ", b)
+            if a == 1 and b == 1:
+                s1 += 'X'
+            elif a == 1 and b == 0:
+                s1 += '|'
+            else:
+                s1 += '-'
+        print(s1)
+
 
 if __name__ == '__main__':
     midi_filenames = sorted(os.listdir('./data'))
