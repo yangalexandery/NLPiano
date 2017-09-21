@@ -5,6 +5,7 @@ import random
 # import matplotlib.pyplot as plt
 
 import midi_io
+import model_helpers
 
 num_epochs = 100
 truncated_backprop_length = 15
@@ -17,38 +18,6 @@ state_size = 384
 
 sample_length = 128
 num_substates = 2
-
-
-def learn_things():
-    midi_list = midi_io.get_pieces()
-    for i in range(0, 20):
-        print('-----------------NEW----------------')
-        print(os.listdir('./data')[i])
-        midi_io.print_statematrix(midi_list[i][-20:])
-        print('------------------------------------')
-
-
-def get_random_sample(pieces):
-    rand_piece = pieces[random.randint(0, len(pieces) - 1)]
-
-    while len(rand_piece) == 0:
-        rand_piece = pieces[random.randint(0, len(pieces) - 1)]
-
-    # print("RANDOM SAMPLE LENGTH")
-    # print(len(rand_piece))
-
-    if len(rand_piece) < sample_length:
-        return rand_piece
-
-    init_index = random.randint(0, len(rand_piece) - sample_length)
-    init_index -= init_index % 4
-    return rand_piece[init_index:init_index+sample_length]
-
-def get_sample_output(sample):
-    # input shifted 1, plus a 0 state
-    sample_output = sample[1:]
-    return np.vstack((sample_output, np.array([[[0.0, 0.0] for i in range(input_size)]])));
-    # return sample_output;
 
 
 batchX_placeholder = tf.placeholder(tf.float32, [batch_size, sample_length, input_size, num_substates])
@@ -112,8 +81,8 @@ def train_model():
             x = []
             y = []
             for i in range(batch_size):
-                x.append(get_random_sample(pieces))
-                y.append(get_sample_output(x[-1]))
+                x.append(model_helpers.get_random_sample(pieces, sample_length))
+                y.append(model_helpers.get_sample_output(x[-1]))
             x = np.array(x)
             y = np.array(y)
             # x = np.array(get_random_sample(pieces))
