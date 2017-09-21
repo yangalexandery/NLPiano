@@ -6,14 +6,14 @@ import random
 
 import midi_io
 
-num_epochs = 10
+num_epochs = 100
 truncated_backprop_length = 15
 state_size = 44
-batch_size = 1
+batch_size = 32
 # num_batches = total_series_length // batch_size // truncated_backprop_length
 
 input_size = 78
-state_size = 100
+state_size = 384
 
 sample_length = 128
 num_substates = 2
@@ -109,10 +109,17 @@ def train_model():
         for epoch_idx in range(num_epochs):
             _current_state = np.zeros((batch_size, state_size))
 
-            x = np.array(get_random_sample(pieces))
-            y = np.array(get_sample_output(x))
-            x = np.expand_dims(x, axis=0)
-            y = np.expand_dims(y, axis=0)
+            x = []
+            y = []
+            for i in range(batch_size):
+                x.append(get_random_sample(pieces))
+                y.append(get_sample_output(x[-1]))
+            x = np.array(x)
+            y = np.array(y)
+            # x = np.array(get_random_sample(pieces))
+            # y = np.array(get_sample_output(x))
+            # x = np.expand_dims(x, axis=0)
+            # y = np.expand_dims(y, axis=0)
             # x = np.expand_dims(np.array(get_random_sample(pieces)), axis=0)
             # y = np.expand_dims(np.array(get_sample_output(x)), axis=0)
             # np.expand_dims(y, axis=0)
@@ -128,6 +135,8 @@ def train_model():
 
             loss_list.append(_total_loss)
             print("LOSS FOR EPOCH #%d (mean cross entropy): %f" % (epoch_idx, _total_loss))
+            # if epoch_idx % 10 == 9:
+            #     midi_io.print_statematrix(tf.argmax(_predictions_series, axis=2))
 
     print("DONE")
 

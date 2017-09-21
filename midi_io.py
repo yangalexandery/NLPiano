@@ -12,7 +12,7 @@ DIR_PREFIX = './data/'
 
 
 def get_pieces():
-    return [get_piece(DIR_PREFIX + midi_file) for midi_file in os.listdir(DIR_PREFIX)[20:40]]
+    return [get_piece(DIR_PREFIX + midi_file) for midi_file in os.listdir(DIR_PREFIX)]
 
 def get_piece(midi_file):
     pattern = midi.read_midifile(midi_file)
