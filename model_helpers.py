@@ -57,7 +57,7 @@ def transform_statematrix(statematrix):
             # previous vicinity (50)
             # this occupies the space [13, 63)
             for k in range(-12, 13):
-                if -1 < j + k < feature_vector_length:
+                if -1 < j + k < len(state):
                     prev_note = state[j + k]
                     context_index = (k + 12) * 2 + 13
                     new_feature_state[context_index] += prev_note[0]
@@ -75,4 +75,5 @@ def transform_statematrix(statematrix):
             new_time_slice.append(new_feature_state)
         new_feature_matrix.append(new_time_slice)
     return new_feature_matrix # convert to numpy array?
+    # shape = [# timeslices, # notes, # attributes]
     # this method is probably bugged. TODO: fix.
