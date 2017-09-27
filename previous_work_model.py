@@ -90,5 +90,48 @@ total_loss = tf.reduce_mean(losses)
 train_step = tf.train.AdagradOptimizer(0.3).minimize(total_loss)
 
 
+def train_model():
+    pieces = midi_io.get_pieces()
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        loss_list = []
+
+        for epoch_idx in range(num_epochs):
+            _current_state = np.zeros((batch_size, state_size))
+
+            x = []
+            y = []
+            for i in range(batch_size):
+            	rand_sample = model_helpers.get_random_sample(pieces, sample_length)
+            	x.append(model_helpers.transform_statematrix(rand_sample))
+            	y.append(model_helpers.get_transformed_output(rand_sample))
+                # x.append(model_helpers.get_random_sample(pieces, sample_length))
+                # y.append(model_helpers.get_sample_output(x[-1]))
+            x = np.array(x)
+            y = np.array(y)
+            # x = np.array(get_random_sample(pieces))
+            # y = np.array(get_sample_output(x))
+            # x = np.expand_dims(x, axis=0)
+            # y = np.expand_dims(y, axis=0)
+            # x = np.expand_dims(np.array(get_random_sample(pieces)), axis=0)
+            # y = np.expand_dims(np.array(get_sample_output(x)), axis=0)
+            # np.expand_dims(y, axis=0)
+            # print(x.shape)
+
+            _total_loss, _train_step = sess.run(
+                [total_loss, train_step], 
+                feed_dict={
+                    batchX_placeholder: x,
+                    batchY_placeholder: y,
+                    # init_state: _current_state
+                })
+
+            loss_list.append(_total_loss)
+            print("LOSS FOR EPOCH #%d (mean cross entropy): %f" % (epoch_idx, _total_loss))
+            # if epoch_idx % 10 == 9:
+            #     midi_io.print_predictions(_predictions_series)
+
+    print("DONE")
 
 
+train_model()

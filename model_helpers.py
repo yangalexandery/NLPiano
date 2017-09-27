@@ -77,3 +77,19 @@ def transform_statematrix(statematrix):
     return new_feature_matrix # convert to numpy array?
     # shape = [# timeslices, # notes, # attributes]
     # this method is probably bugged. TODO: fix.
+
+def get_transformed_output(sample):
+    output = get_sample_output(sample)
+    # given output, transform into usable 3-output matrix
+    new_output = []
+    for output_slice in output:
+        new_output_slice = []
+        for note in output_slice:
+            val = 0
+            if note[0] == 1 and note[1] == 0:
+                val = 1
+            if note[0] == 1 and note[1] == 1:
+                val = 2
+            new_output_slice.append(val)
+        new_output.append(new_output_slice)
+    return new_output
