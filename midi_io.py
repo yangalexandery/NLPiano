@@ -14,7 +14,7 @@ DIR_PREFIX = './data/'
 
 
 def get_pieces():
-    return [get_piece(DIR_PREFIX + midi_file) for midi_file in os.listdir(DIR_PREFIX)[0:20]]
+    return [get_piece(DIR_PREFIX + midi_file) for midi_file in os.listdir(DIR_PREFIX)]
 
 def get_piece(midi_file):
     pattern = midi.read_midifile(midi_file)
@@ -129,6 +129,21 @@ def print_predictions(pred_matrix):
             if a == 1 and b == 1:
                 s1 += 'X'
             elif a == 1 and b == 0:
+                s1 += '|'
+            else:
+                s1 += '-'
+        print(s1)
+
+
+def print_predictions_2(pred_matrix):
+    print(pred_matrix.shape)
+    for pred in pred_matrix[0]:
+        s1 = ''
+        for x in pred:
+            a = np.argmax(x)
+            if a == 2:
+                s1 += 'X'
+            elif a == 1:
                 s1 += '|'
             else:
                 s1 += '-'

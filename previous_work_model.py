@@ -7,8 +7,8 @@ import random
 import midi_io
 import model_helpers
 
-num_epochs = 100
-batch_size = 5
+num_epochs = 500
+batch_size = 3
 sample_length = 128
 
 note_size = 78
@@ -44,20 +44,6 @@ time_layer_output, time_state = tf.nn.dynamic_rnn(cell=time_lstm, inputs=time_la
 # time_layer_output shape is [batch_size * note_size, sample_length, time_lstm_state_size]
 time_layer_output = tf.reshape(time_layer_output, [batch_size, note_size, sample_length, time_lstm_state_size])
 
-# for i in range(sample_length):
-	# take notes at a time slice and split them up
-	# each statematrix[batch][time][note] corresponds to a note which we want to feed to the time neuron
-	# time neuron takes in a vector of size attr_size
-	# time_slice = tf.reshape(batchX_placeholder[:,i,:,:], [batch_size * note_size, attr_size])
-	# time_slice = tf.reshape(time_layer_input[i], [batch_size * note_size, attr_size])
-	# time_output, time_state = tf.nn.dynamic_rnn(cell=time_lstm, inputs=time_slice, dtype=tf.float32)
-
-	# put all output into a new tensor
-	# time_layer_output.append(tf.reshape(time_output, [batch_size, note_size, time_lstm_state_size]))
-
-
-# shape [sample_length, batch_size, note_size, time_lstm_state_size]
-# time_layer_output = tf.convert_to_tensor(time_layer_output)
 
 
 # transpose layer: switch axes
@@ -67,32 +53,18 @@ transpose_layer_output = tf.reshape(transpose_layer_output, [batch_size * sample
 
 with tf.variable_scope('note_scope') as scope:
 	note_layer_output, note_state = tf.nn.dynamic_rnn(cell=note_lstm, inputs=transpose_layer_output, dtype=tf.float32)
-# note_layer_output = []
-# for i in range(note_size):
-# 	note_slice = transpose_layer_output[i]
 
-# 	# feed time_output to note lstm
-# 	note_output, note_state = note_lstm(note_slice, note_state)
-
-# 	# put all output into a new tensor
-# 	note_layer_output.append(note_output)
-
-# shape [note_size, batch_size * sample_length, note_lstm_state_size]
-# note_layer_output = tf.convert_to_tensor(note_layer_output)
-# note_layer_output = tf.reshape(note_layer_output, [note_size * batch_size * sample_length, note_lstm_state_size])
-# note_layer_output = tf.reshape(note_layer_output, [batch_size, sample_length, note_size, note_lstm_state_size])
 note_layer_output = tf.reshape(note_layer_output, [batch_size * sample_length * note_size, note_lstm_state_size])
+
 
 # batchY_placeholder_transposed = tf.transpose(batchY_placeholder, [2, 0, 1])
 output_series = tf.reshape(batchY_placeholder, [batch_size * sample_length * note_size])
-# note_layer_output = tf.reshape(note_layer_output, [note_size, batch_size, sample_length, note_lstm_state_size])
-# note_layer_output = tf.transpose(note_layer_output, [1, 2, 0, 3])
-# note_layer_output = tf.reshape(note_layer_output, [batch_, note_lstm_state_size])
 
-# print(len(note_layer_output))
-logits_series = tf.matmul(note_layer_output, W) + b
-# logits_series = [tf.matmul(note_layer_output, W) + b for note_output in note_layer_output]
+
+weights = tf.Variable([[1.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 10.0]], tf.float32)
+logits_series = tf.matmul(tf.matmul(note_layer_output, W) + b, weights)
 losses = []
+predictions_series = tf.reshape(tf.nn.softmax(logits_series), [batch_size, sample_length, note_size, num_output_categories])
 
 
 losses.append(tf.nn.sparse_softmax_cross_entropy_with_logits(
@@ -137,8 +109,8 @@ def train_model():
             # np.expand_dims(y, axis=0)
             # print(x.shape)
 
-            _total_loss, _train_step = sess.run(
-                [total_loss, train_step], 
+            _total_loss, _train_step, _predictions_series = sess.run(
+                [total_loss, train_step, predictions_series], 
                 feed_dict={
                     batchX_placeholder: x,
                     batchY_placeholder: y,
@@ -147,8 +119,8 @@ def train_model():
 
             loss_list.append(_total_loss)
             print("LOSS FOR EPOCH #%d (mean cross entropy): %f" % (epoch_idx, _total_loss))
-            # if epoch_idx % 10 == 9:
-            #     midi_io.print_predictions(_predictions_series)
+            if epoch_idx % 10 == 9:
+                midi_io.print_predictions_2(_predictions_series)
 
     print("DONE")
 
