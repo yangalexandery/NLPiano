@@ -14,8 +14,8 @@ sample_length = 128
 note_size = 78
 attr_size = 79 
 
-time_lstm_state_size = 100
-note_lstm_state_size = 100
+time_lstm_state_size = 384
+note_lstm_state_size = 384
 
 num_output_categories = 3
 
@@ -61,8 +61,9 @@ note_layer_output = tf.reshape(note_layer_output, [batch_size * sample_length * 
 output_series = tf.reshape(batchY_placeholder, [batch_size * sample_length * note_size])
 
 
-weights = tf.Variable([[1.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 10.0]], tf.float32)
-logits_series = tf.matmul(tf.matmul(note_layer_output, W) + b, weights)
+# weights = tf.Variable([[1.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 10.0]], tf.float32)
+# logits_series = tf.matmul(tf.matmul(note_layer_output, W) + b, weights)
+logits_series = tf.matmul(note_layer_output, W) + b
 losses = []
 predictions_series = tf.reshape(tf.nn.softmax(logits_series), [batch_size, sample_length, note_size, num_output_categories])
 

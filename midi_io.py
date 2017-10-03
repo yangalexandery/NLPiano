@@ -140,7 +140,7 @@ def print_predictions_2(pred_matrix):
     for pred in pred_matrix[0]:
         s1 = ''
         for x in pred:
-            a = np.argmax(x)
+            a = np.argmax(np.array([x[0], x[1], x[2]*5]))
             if a == 2:
                 s1 += 'X'
             elif a == 1:
