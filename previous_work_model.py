@@ -3,6 +3,7 @@ import numpy as np
 import tensorflow as tf
 import random
 # import matplotlib.pyplot as plt
+# tensorflow now supports GPU computation on dev instance!!!
 
 import midi_io
 import model_helpers
