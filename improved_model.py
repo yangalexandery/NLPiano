@@ -45,7 +45,7 @@ note_state_2_bw = tf.zeros([batch_size * sample_length, note_lstm_state_size_2])
 
 
 # regular fully-connected layer
-W = tf.Variable(np.random.rand(note_lstm_state_size_2, num_output_categories), dtype=tf.float32) # weights for state t-1 -> state t
+W = tf.Variable(np.random.rand(2*note_lstm_state_size_2, num_output_categories), dtype=tf.float32) # weights for state t-1 -> state t
 b = tf.Variable(np.zeros((1, num_output_categories)), dtype=tf.float32)
 
 # time_layer_input = tf.unstack(batchX_placeholder, axis=1)
@@ -71,26 +71,32 @@ time_layer_2_output = tf.reshape(time_layer_2_output, [batch_size, note_size, sa
 transpose_layer_output = tf.transpose(time_layer_2_output, [0, 2, 1, 3])
 transpose_layer_output = tf.reshape(transpose_layer_output, [batch_size * sample_length, note_size, time_lstm_state_size])
 
-with tf.variable_scope('note_scope') as scope:
-    note_layer_1_output, note_state = tf.nn.bidirectional_dynamic_rnn(cell_fw=note_lstm, cell_bw=note_lstm_bw, inputs=transpose_layer_output, dtype=tf.float32)
+with tf.variable_scope('note_scope_1_fw') as scope:
+    note_layer_1_output_fw, note_state_fw = tf.nn.dynamic_rnn(cell=note_lstm, inputs=transpose_layer_output, dtype=tf.float32)
+
+with tf.variable_scope('note_scope_1_bw') as scope:
+    note_layer_1_output_bw, note_state_bw = tf.nn.dynamic_rnn(cell=note_lstm_bw, inputs=tf.reverse(transpose_layer_output, [1]), dtype=tf.float32)
 
 # note_layer_1_output = tf.reshape(note_layer_output, [batch_size * sample_length * note_size, note_lstm_state_size])
 
 
-with tf.variable_scope('note_scope_2') as scope:
-    note_layer_2_output, note_state_2 = tf.nn.bidirectional_dynamic_rnn(cell_fw=note_lstm_2, cell_bw=note_lstm_2_bw, inputs=note_layer_1_output, dtype=tf.float32)
+with tf.variable_scope('note_scope_2_fw') as scope:
+    note_layer_2_output_fw, note_state_2_fw = tf.nn.dynamic_rnn(cell=note_lstm_2, inputs=note_layer_1_output_fw, dtype=tf.float32)
+
+with tf.variable_scope('note_scope_2_bw') as scope:
+    note_layer_2_output_bw, note_state_2_bw = tf.nn.dynamic_rnn(cell=note_lstm_2_bw, inputs=note_layer_1_output_bw, dtype=tf.float32)
 
 
-note_layer_2_output = tf.reshape(note_layer_2_output, [batch_size * sample_length * note_size, note_lstm_state_size_2])
-
-
+note_layer_2_output_fw = tf.reshape(note_layer_2_output_fw, [batch_size * sample_length * note_size, note_lstm_state_size_2])
+note_layer_2_output_bw = tf.reshape(note_layer_2_output_bw, [batch_size * sample_length * note_size, note_lstm_state_size_2])
+note_layer_output = tf.concat([note_layer_2_output_fw, note_layer_2_output_bw], axis=1)
 
 # batchY_placeholder_transposed = tf.transpose(batchY_placeholder, [2, 0, 1])
 output_series = tf.reshape(batchY_placeholder, [batch_size * sample_length * note_size])
 
 # weights = tf.Variable([[1.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 10.0]], tf.float32)
 # logits_series = tf.matmul(tf.matmul(note_layer_output, W) + b, weights)
-logits_series = tf.matmul(note_layer_2_output, W) + b
+logits_series = tf.matmul(note_layer_output, W) + b
 losses = []
 predictions_series = tf.reshape(tf.nn.softmax(logits_series), [batch_size, sample_length, note_size, num_output_categories])
 

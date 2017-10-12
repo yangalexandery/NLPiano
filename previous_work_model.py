@@ -100,7 +100,7 @@ losses.append(tf.nn.sparse_softmax_cross_entropy_with_logits(
 #     ))
 
 total_loss = tf.reduce_mean(losses)
-train_step = tf.train.AdadeltaOptimizer(learning_rate=0.01, rho=0.95, epsilon=0.000001).minimize(total_loss)
+train_step = tf.train.AdadeltaOptimizer(learning_rate=0.1, rho=0.95, epsilon=0.000001).minimize(total_loss)
 
 
 def train_model():
