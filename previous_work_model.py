@@ -16,7 +16,8 @@ note_size = 78
 attr_size = 79 
 
 time_lstm_state_size = 300
-note_lstm_state_size = 50
+note_lstm_state_size = 100
+note_lstm_state_size_2 = 50
 
 num_output_categories = 3
 
@@ -33,12 +34,12 @@ time_state_2 = tf.zeros([batch_size * note_size, time_lstm_state_size])
 note_lstm = tf.contrib.rnn.BasicLSTMCell(note_lstm_state_size)
 note_state = tf.zeros([batch_size * sample_length, note_lstm_state_size])
 
-note_lstm_2 = tf.contrib.rnn.BasicLSTMCell(note_lstm_state_size)
-note_state_2 = tf.zeros([batch_size * sample_length, note_lstm_state_size])
+note_lstm_2 = tf.contrib.rnn.BasicLSTMCell(note_lstm_state_size_2)
+note_state_2 = tf.zeros([batch_size * sample_length, note_lstm_state_size_2])
 
 
 # regular fully-connected layer
-W = tf.Variable(np.random.rand(note_lstm_state_size, num_output_categories), dtype=tf.float32) # weights for state t-1 -> state t
+W = tf.Variable(np.random.rand(note_lstm_state_size_2, num_output_categories), dtype=tf.float32) # weights for state t-1 -> state t
 b = tf.Variable(np.zeros((1, num_output_categories)), dtype=tf.float32)
 
 # time_layer_input = tf.unstack(batchX_placeholder, axis=1)
@@ -65,20 +66,21 @@ transpose_layer_output = tf.transpose(time_layer_2_output, [0, 2, 1, 3])
 transpose_layer_output = tf.reshape(transpose_layer_output, [batch_size * sample_length, note_size, time_lstm_state_size])
 
 with tf.variable_scope('note_scope') as scope:
-	note_layer_2_output, note_state = tf.nn.dynamic_rnn(cell=note_lstm, inputs=transpose_layer_output, dtype=tf.float32)
+	note_layer_1_output, note_state = tf.nn.dynamic_rnn(cell=note_lstm, inputs=transpose_layer_output, dtype=tf.float32)
 
-# note_layer_output = tf.reshape(note_layer_output, [batch_size * sample_length * note_size, note_lstm_state_size])
-
-# with tf.variable_scope('note_scope_2') as scope:
-#     note_layer_2_output, note_state_2 = tf.nn.dynamic_rnn(cell=note_lstm_2, inputs=note_layer_1_output, dtype=tf.float32)
+# note_layer_1_output = tf.reshape(note_layer_output, [batch_size * sample_length * note_size, note_lstm_state_size])
 
 
-note_layer_2_output = tf.reshape(note_layer_2_output, [batch_size * sample_length * note_size, note_lstm_state_size])
+with tf.variable_scope('note_scope_2') as scope:
+    note_layer_2_output, note_state_2 = tf.nn.dynamic_rnn(cell=note_lstm_2, inputs=note_layer_1_output, dtype=tf.float32)
+
+
+note_layer_2_output = tf.reshape(note_layer_2_output, [batch_size * sample_length * note_size, note_lstm_state_size_2])
+
 
 
 # batchY_placeholder_transposed = tf.transpose(batchY_placeholder, [2, 0, 1])
 output_series = tf.reshape(batchY_placeholder, [batch_size * sample_length * note_size])
-
 
 # weights = tf.Variable([[1.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 10.0]], tf.float32)
 # logits_series = tf.matmul(tf.matmul(note_layer_output, W) + b, weights)
@@ -98,7 +100,7 @@ losses.append(tf.nn.sparse_softmax_cross_entropy_with_logits(
 #     ))
 
 total_loss = tf.reduce_mean(losses)
-train_step = tf.train.AdamOptimizer(0.01).minimize(total_loss)
+train_step = tf.train.AdadeltaOptimizer(learning_rate=0.01, rho=0.95, epsilon=0.000001).minimize(total_loss)
 
 
 def train_model():
