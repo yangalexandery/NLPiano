@@ -19,11 +19,11 @@ time_lstm_state_size = 300
 note_lstm_state_size = 100
 note_lstm_state_size_2 = 50
 
-num_output_categories = 3
+num_output_categories = 2
 
 
 batchX_placeholder = tf.placeholder(tf.float32, [batch_size, sample_length, note_size, attr_size])
-batchY_placeholder = tf.placeholder(tf.int32, [batch_size, sample_length, note_size])
+batchY_placeholder = tf.placeholder(tf.int32, [batch_size, sample_length, note_size, num_output_categories])
 
 time_lstm = tf.contrib.rnn.BasicLSTMCell(time_lstm_state_size)
 time_state = tf.zeros([batch_size * note_size, time_lstm_state_size])
@@ -80,27 +80,31 @@ note_layer_2_output = tf.reshape(note_layer_2_output, [batch_size * sample_lengt
 
 
 # batchY_placeholder_transposed = tf.transpose(batchY_placeholder, [2, 0, 1])
-output_series = tf.reshape(batchY_placeholder, [batch_size * sample_length * note_size])
+output_series = tf.cast(tf.reshape(batchY_placeholder, [batch_size * sample_length * note_size * num_output_categories]), tf.float32)
 
 # weights = tf.Variable([[1.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 10.0]], tf.float32)
 # logits_series = tf.matmul(tf.matmul(note_layer_output, W) + b, weights)
 logits_series = tf.matmul(note_layer_2_output, W) + b
-losses = []
-predictions_series = tf.reshape(tf.nn.softmax(logits_series), [batch_size, sample_length, note_size, num_output_categories])
+sigmoid_output = tf.sigmoid(tf.reshape(logits_series, [batch_size * sample_length * note_size * num_output_categories]))
+
+predictions_series = tf.reshape(sigmoid_output, [batch_size, sample_length, note_size, num_output_categories])
+losses = -tf.log(2 * tf.multiply(sigmoid_output, output_series) - sigmoid_output - output_series +    tf.fill([batch_size * sample_length * note_size * num_output_categories], 1.0))
+# losses = []
+# predictions_series = tf.reshape(tf.nn.softmax(logits_series), [batch_size, sample_length, note_size, num_output_categories])
 
 
-losses.append(tf.nn.sparse_softmax_cross_entropy_with_logits(
-	logits=logits_series,
-	labels=output_series
-))
+# losses.append(tf.nn.sparse_softmax_cross_entropy_with_logits(
+# 	logits=logits_series,
+# 	labels=output_series
+# ))
 # for logits, labels in zip(logits_series, output_series):
 #     losses.append(tf.nn.sparse_softmax_cross_entropy_with_logits(
 #         logits=logits,
 #         labels=labels
 #     ))
 
-total_loss = tf.reduce_mean(losses)
-train_step = tf.train.AdadeltaOptimizer(learning_rate=0.1, rho=0.95, epsilon=0.000001).minimize(total_loss)
+total_loss = tf.reduce_sum(losses)
+train_step = tf.train.AdadeltaOptimizer(learning_rate=0.01, rho=0.95, epsilon=0.000001).minimize(total_loss)
 
 
 def train_model():
@@ -118,9 +122,9 @@ def train_model():
             for i in range(batch_size):
             	rand_sample = model_helpers.get_random_sample(pieces, sample_length)
             	x.append(model_helpers.transform_statematrix(rand_sample))
-            	y.append(model_helpers.get_transformed_output(rand_sample))
+            	# y.append(model_helpers.get_transformed_output(rand_sample))
                 # x.append(model_helpers.get_random_sample(pieces, sample_length))
-                # y.append(model_helpers.get_sample_output(x[-1]))
+                y.append(model_helpers.get_sample_output(rand_sample))
             x = np.array(x)
             y = np.array(y)
             # x = np.array(get_random_sample(pieces))
@@ -143,7 +147,7 @@ def train_model():
             loss_list.append(_total_loss)
             print("LOSS FOR EPOCH #%d (mean cross entropy): %f" % (epoch_idx, _total_loss))
             if epoch_idx % 10 == 9:
-                midi_io.print_predictions_2(_predictions_series)
+                midi_io.print_predictions(_predictions_series)
 
     print("DONE")
 

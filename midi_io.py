@@ -125,7 +125,7 @@ def print_predictions(pred_matrix):
         for x in pred:
             a = np.argmax(x[0])
             b = np.argmax(x[1])
-            print(a, " ", b)
+            # print(a, " ", b)
             if a == 1 and b == 1:
                 s1 += 'X'
             elif a == 1 and b == 0:
