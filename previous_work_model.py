@@ -88,7 +88,7 @@ logits_series = tf.matmul(note_layer_2_output, W) + b
 sigmoid_output = tf.sigmoid(tf.reshape(logits_series, [batch_size * sample_length * note_size * num_output_categories]))
 
 predictions_series = tf.reshape(sigmoid_output, [batch_size, sample_length, note_size, num_output_categories])
-losses = -tf.log(2 * tf.multiply(sigmoid_output, output_series) - sigmoid_output - output_series +    tf.fill([batch_size * sample_length * note_size * num_output_categories], 1.0))
+losses = -tf.log(2 * tf.multiply(sigmoid_output, output_series) - sigmoid_output - output_series + tf.fill([batch_size * sample_length * note_size * num_output_categories], 1.0))
 # losses = []
 # predictions_series = tf.reshape(tf.nn.softmax(logits_series), [batch_size, sample_length, note_size, num_output_categories])
 
@@ -119,6 +119,7 @@ def train_model():
 
             x = []
             y = []
+            # print(pieces[0][0].shape)
             for i in range(batch_size):
             	rand_sample = model_helpers.get_random_sample(pieces, sample_length)
             	x.append(model_helpers.transform_statematrix(rand_sample))

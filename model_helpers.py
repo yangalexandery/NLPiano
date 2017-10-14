@@ -27,7 +27,7 @@ def get_random_sample(pieces, sample_length):
         return rand_piece
 
     init_index = random.randint(0, len(rand_piece) - sample_length)
-    init_index -= init_index % 4
+    # init_index -= init_index % 4
     return rand_piece[init_index:init_index+sample_length]
 
 
@@ -49,7 +49,7 @@ def transform_statematrix(statematrix):
         for j in range(len(state)):
             new_feature_state = [0]*feature_vector_length
             # position (1)
-            new_feature_state[0] = j / feature_vector_length
+            new_feature_state[0] = j #/ feature_vector_length
 
             # pitch class (12)
             new_feature_state[j % 12 + 1] += 1
