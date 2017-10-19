@@ -27,7 +27,7 @@ def get_random_sample(pieces, sample_length):
         return rand_piece
 
     init_index = random.randint(0, len(rand_piece) - sample_length)
-    # init_index -= init_index % 4
+    init_index -= init_index % 16
     return rand_piece[init_index:init_index+sample_length]
 
 

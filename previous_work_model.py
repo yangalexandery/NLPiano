@@ -75,6 +75,8 @@ note_layer_2_output = tf.reshape(note_layer_2_output, [batch_size * sample_lengt
 # batchY_placeholder_transposed = tf.transpose(batchY_placeholder, [2, 0, 1])
 output_series = tf.cast(tf.reshape(batchY_placeholder, [batch_size * sample_length * note_size * num_output_categories]), tf.float32)
 output_series_0, output_series_1 = tf.split(output_series, 2, 0)
+output_series_0 = tf.reshape(output_series_0, [batch_size * sample_length * note_size, 1])
+mask = tf.concat([tf.ones(output_series_0.shape, dtype=tf.float32), output_series_0], axis=1)
 
 # weights = tf.Variable([[1.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 10.0]], tf.float32)
 # logits_series = tf.matmul(tf.matmul(note_layer_output, W) + b, weights)
@@ -83,7 +85,10 @@ sigmoid_output = tf.sigmoid(tf.reshape(logits_series, [batch_size * sample_lengt
 sigmoid_output_0, sigmoid_output_1 = tf.split(sigmoid_output, 2, 0)
 
 predictions_series = tf.reshape(sigmoid_output, [batch_size, sample_length, note_size, num_output_categories])
-losses = -tf.log(2 * tf.multiply(sigmoid_output_0, output_series_0) - sigmoid_output_0 - output_series_0 + tf.fill([batch_size * sample_length * note_size], 1.0))
+losses = -tf.log(2 * tf.multiply(sigmoid_output, output_series) - sigmoid_output - output_series + 1.0 + 1e-7)
+losses = tf.reshape(losses, [batch_size * sample_length * note_size, num_output_categories])
+losses = tf.multiply(mask, losses)
+#losses = -tf.log(2 * tf.multiply(sigmoid_output_0, output_series_0) - sigmoid_output_0 - output_series_0 + tf.fill([batch_size * sample_length * note_size], 1.0))
 # losses = []
 # predictions_series = tf.reshape(tf.nn.softmax(logits_series), [batch_size, sample_length, note_size, num_output_categories])
 
