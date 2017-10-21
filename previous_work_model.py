@@ -9,7 +9,7 @@ import midi_io
 import model_helpers
 
 num_epochs = 5000
-batch_size = 5
+batch_size = 20
 sample_length = 128
 
 note_size = 78
@@ -116,6 +116,7 @@ def train_model():
                 # y.append(model_helpers.get_transformed_output(rand_sample))
                 # x.append(model_helpers.get_random_sample(pieces, sample_length))
                 y.append(model_helpers.get_sample_output(rand_sample))
+                # y.append(get_random_samplemple[1:])
             x = np.array(x)
             y = np.array(y)
             # x = np.array(get_random_sample(pieces))

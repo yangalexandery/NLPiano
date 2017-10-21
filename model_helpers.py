@@ -67,6 +67,8 @@ def transform_statematrix(statematrix):
             tally = [0] * 12
             for k in range(len(state)):
                 tally[k % 12] += state[k][0]
+            pitch = j % 12
+            tally = tally[pitch:]+tally[:pitch]
             for k in range(12):
                 new_feature_state[k + 63] += tally[k] # maybe normalize this?
 
@@ -76,6 +78,8 @@ def transform_statematrix(statematrix):
             new_feature_state[76] += 2 * ((i // 2) % 2) - 1
             new_feature_state[77] += 2 * ((i // 4) % 2) - 1
             new_feature_state[78] += 2 * ((i // 8) % 2) - 1
+            if random.uniform(0, 1) < 0.00001:
+                print(new_feature_state)
             new_time_slice.append(new_feature_state)
         new_feature_matrix.append(new_time_slice)
     return new_feature_matrix # convert to numpy array?
